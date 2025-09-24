@@ -30,7 +30,7 @@ for VERSION in "${VERSIONS[@]}"; do
   # maybe we failed because the test was flaky => try two more times to be sure
   while [ "$RESULT" -ne 0 ] && [ $ATTEMPTS -le 2 ]; do
     echo "Re-running the test with GVM_TCK_LV=$VERSION and coordinates=$TEST_COORDINATES"
-    GVM_TCK_LV="$VERSION" ./gradlew test -Pcoordinates="$TEST_COORDINATES"
+    GVM_TCK_LV="$VERSION" ./gradlew clean test -Pcoordinates="$TEST_COORDINATES"
     RESULT=$?
     ATTEMPTS=$((ATTEMPTS + 1))
   done
