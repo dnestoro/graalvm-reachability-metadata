@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Usage: ./run-consecutive-tests.sh "<test-coordinates>" '[ "1.0", "2.0", "3.0" ]'
+
 set -u
 set -x
 
@@ -8,13 +10,9 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
+# Input parameters
 TEST_COORDINATES="$1"
 VERSIONS_JSON="$2"
-
-if ! command -v jq &> /dev/null; then
-  echo "jq is required but not installed."
-  exit 1
-fi
 
 # Remove surrounding single quotes if present (when called from workflow)
 VERSIONS_JSON="${VERSIONS_JSON#"${VERSIONS_JSON%%[!\']*}"}"
@@ -24,21 +22,23 @@ VERSIONS_JSON="${VERSIONS_JSON%"${VERSIONS_JSON##*[!\']}"}"
 readarray -t VERSIONS < <(echo "$VERSIONS_JSON" | jq -r '.[]')
 
 for VERSION in "${VERSIONS[@]}"; do
-  ATTEMPT=1
-  MAX_ATTEMPTS=3
-  while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-    echo "Running test with GVM_TCK_LV=$VERSION and coordinates=$TEST_COORDINATES"
+  echo "Running test with GVM_TCK_LV=$VERSION and coordinates=$TEST_COORDINATES"
+  GVM_TCK_LV="$VERSION" ./gradlew test -Pcoordinates="$TEST_COORDINATES"
+  RESULT=$?
+
+  ATTEMPTS=1
+  # maybe we failed because the test was flaky => try two more times to be sure
+  while [ "$RESULT" -ne 0 ] && [ $ATTEMPTS -le 2 ]; do
+    echo "Re-running the test with GVM_TCK_LV=$VERSION and coordinates=$TEST_COORDINATES"
     GVM_TCK_LV="$VERSION" ./gradlew test -Pcoordinates="$TEST_COORDINATES"
     RESULT=$?
-    if [ "$RESULT" -eq 0 ]; then
-      echo "PASSED:$VERSION"
-      break
-    else
-      echo "FAILED:$VERSION"
-    fi
-    ATTEMPT=$((ATTEMPT + 1))
+    ATTEMPTS=$((ATTEMPTS + 1))
   done
-  if [ "$RESULT" -ne 0 ]; then
+
+  if [ "$RESULT" -eq 0 ]; then
+    echo "PASSED:$VERSION"
+  else
+    echo "FAILED:$VERSION"
     break
   fi
 done
