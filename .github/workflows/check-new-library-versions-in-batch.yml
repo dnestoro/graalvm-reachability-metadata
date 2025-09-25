@@ -96,7 +96,7 @@ jobs:
           
           if [[ -n "$ISSUE_NUMBER" ]]; then
             echo "There is no progress since last time this version was tested. Skipping further steps."
-            exit 78 # skipp exit status
+            exit 0
           fi
 
       - name: "Extract test path and library version"
