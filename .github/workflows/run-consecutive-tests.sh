@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Usage: ./run-consecutive-tests.sh "<test-coordinates>" '[ "1.0", "2.0", "3.0" ]'
-
 set -u
 set -x
 
