@@ -46,6 +46,9 @@ abstract class FetchExistingLibrariesWithNewerVersionsTask extends DefaultTask {
             }
         }
 
+        // TODO remove after testing
+        newerVersions = newerVersions.subList(0, 20)
+
         def map = [:]
         newerVersions.each { coord ->
             def (group, artifact, version) = coord.tokenize(':')
