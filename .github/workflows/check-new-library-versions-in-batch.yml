@@ -158,25 +158,18 @@ jobs:
       - name: "❗ New library is not supported"
         if: steps.runtests.outputs.failed_version != ''
         run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
-          
           JOB_NAME="${GITHUB_JOB}"
           RUN_ID="${GITHUB_RUN_ID}"
           REPO="${GITHUB_REPOSITORY}"
-        
-          # Fetch jobs for this run using the GitHub API
-          JOBS_JSON=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/${REPO}/actions/runs/${RUN_ID}/jobs")
-        
-          # Extract the job id for the current job name
+      
+          JOBS_JSON=$(gh run view "$RUN_ID" --json jobs)
+      
           JOB_ID=$(echo "$JOBS_JSON" | jq ".jobs[] | select(.name==\"${JOB_NAME}\") | .id")
-          
+      
           FAILED_VERSION="${{ steps.runtests.outputs.failed_version }}"
-          REPO="${{ github.repository }}"
           TITLE="${{ matrix.item.name }}:$FAILED_VERSION"
           BODY="https://github.com/${REPO}/actions/runs/${RUN_ID}/job/${JOB_ID}"
-
+      
           ISSUE_NUMBER=$(gh issue list --repo "$REPO" --state open --search "$TITLE" --json number,title --jq '.[] | select(.title == "'"$TITLE"'") | .number')
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Updating existing issue #$ISSUE_NUMBER"
