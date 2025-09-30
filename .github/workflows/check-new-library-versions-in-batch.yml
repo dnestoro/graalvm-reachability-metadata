@@ -161,11 +161,13 @@ jobs:
           JOB_NAME="${GITHUB_JOB}"
           RUN_ID="${GITHUB_RUN_ID}"
           REPO="${GITHUB_REPOSITORY}"
+          echo="$JOB_NAME"
+          echo="$RUN_ID"
       
           JOBS_JSON=$(gh run view "$RUN_ID" --json jobs)
-      
-          JOB_ID=$(echo "$JOBS_JSON" | jq ".jobs[] | select(.name==\"${JOB_NAME}\") | .id")
-      
+          echo="$JOBS_JSON"
+          JOB_ID=$(echo "$JOBS_JSON" | jq -r --arg JOB_NAME "$JOB_NAME" ' .jobs[] | select(.job==$JOB_NAME or .name | test($JOB_NAME)) | .id' | head -n1)
+          
           FAILED_VERSION="${{ steps.runtests.outputs.failed_version }}"
           TITLE="${{ matrix.item.name }}:$FAILED_VERSION"
           BODY="https://github.com/${REPO}/actions/runs/${RUN_ID}/job/${JOB_ID}"
